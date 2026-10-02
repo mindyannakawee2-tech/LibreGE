@@ -1,0 +1,21 @@
+# LibreBuilder Build Environment
+
+DEP=(
+    "vendor/SDL"
+)
+
+TAR="src"
+
+TPF="Linux"
+
+# Leave blank to use LibreGE default build process
+build=(
+)
+
+# Leave blank to run the default engine executable
+run=(
+)
+
+userprocess=(
+    "echo LibreBuilder: preparing LibreGE..."
+)
