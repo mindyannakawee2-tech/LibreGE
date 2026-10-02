@@ -649,6 +649,11 @@ Commands:
       Detect Linux distribution and install
       LibreBuilder build dependencies.
 
+  update
+      Safely update LibreGE engine files without
+      replacing project assets, scripts, scenes,
+      build configuration, or game source.
+
   build
       Build the LibreGE project.
 
@@ -727,6 +732,19 @@ int main(
     if (command == "setup") {
         return setupLinuxDependencies();
     }
+
+    if (command == "update") {
+#ifdef __linux__
+    return std::system(
+        "./tools/LibreBuilder/update.sh"
+    );
+#else
+    std::cerr
+        << "[LibreBuilder] update currently supports Linux only.\n";
+
+    return 1;
+#endif
+}
 
     if (command == "clean") {
         cleanBuild();
