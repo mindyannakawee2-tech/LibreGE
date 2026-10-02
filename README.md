@@ -5,9 +5,12 @@ LibreGE is an continuation of NijeEngine, cuz I deleted Windows
 
 # Use LibreGE
 ```
-git clone https://github.com/mindyannakawee2-tech/LibreGE.git YOURGAMENAME
-cd YOURGAMENAME
+git clone --recurse-submodules https://github.com/mindyannakawee2-tech/LibreGE.git
+cd LibreGE
+
 ./install-lbbe.sh
+
+lbbe setup
 lbbe build
 lbbe run
 ```

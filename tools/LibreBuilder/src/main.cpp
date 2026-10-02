@@ -20,6 +20,12 @@ struct BuildConfig {
     std::vector<std::string> userProcesses;
 };
 
+struct LinuxDistro {
+    std::string id;
+    std::string idLike;
+    std::string name;
+};
+
 static std::string trim(const std::string& input) {
     const auto begin = std::find_if_not(
         input.begin(),
@@ -59,13 +65,45 @@ static std::string removeQuotes(std::string value) {
     return value;
 }
 
-static bool startsWith(const std::string& text, const std::string& prefix) {
+static bool startsWith(
+    const std::string& text,
+    const std::string& prefix
+) {
     return text.rfind(prefix, 0) == 0;
+}
+
+static bool contains(
+    const std::string& text,
+    const std::string& value
+) {
+    return text.find(value) != std::string::npos;
+}
+
+static int executeCommand(
+    const std::string& command
+) {
+    std::cout
+        << "\n[LibreBuilder] $ "
+        << command
+        << '\n';
+
+    const int result = std::system(command.c_str());
+
+    if (result != 0) {
+        std::cerr
+            << "[LibreBuilder] Command failed with code "
+            << result
+            << '\n';
+    }
+
+    return result;
 }
 
 class Parser {
 public:
-    BuildConfig parse(const std::string& path) {
+    BuildConfig parse(
+        const std::string& path
+    ) {
         std::ifstream file(path);
 
         if (!file.is_open()) {
@@ -96,7 +134,12 @@ public:
                     continue;
                 }
 
-                parseBlockEntry(config, activeBlock, line);
+                parseBlockEntry(
+                    config,
+                    activeBlock,
+                    line
+                );
+
                 continue;
             }
 
@@ -210,24 +253,208 @@ private:
     }
 };
 
-static int executeCommand(
-    const std::string& command
-) {
-    std::cout
-        << "\n[LibreBuilder] $ "
-        << command
-        << '\n';
+static LinuxDistro detectLinuxDistro() {
+    LinuxDistro distro;
 
-    const int result = std::system(command.c_str());
+#ifdef __linux__
 
-    if (result != 0) {
-        std::cerr
-            << "[LibreBuilder] Command failed with code "
-            << result
+    std::ifstream file("/etc/os-release");
+
+    if (!file.is_open()) {
+        return distro;
+    }
+
+    std::string line;
+
+    while (std::getline(file, line)) {
+        const auto pos = line.find('=');
+
+        if (pos == std::string::npos) {
+            continue;
+        }
+
+        std::string key = trim(
+            line.substr(0, pos)
+        );
+
+        std::string value = removeQuotes(
+            line.substr(pos + 1)
+        );
+
+        if (key == "ID") {
+            distro.id = value;
+        }
+        else if (key == "ID_LIKE") {
+            distro.idLike = value;
+        }
+        else if (key == "PRETTY_NAME") {
+            distro.name = value;
+        }
+    }
+
+#endif
+
+    return distro;
+}
+
+static int setupLinuxDependencies() {
+
+#ifndef __linux__
+
+    std::cerr
+        << "[LibreBuilder] setup currently supports Linux only.\n";
+
+    return 1;
+
+#else
+
+    LinuxDistro distro = detectLinuxDistro();
+
+    std::cout << "\nLibreBuilder Linux Setup\n";
+    std::cout << "========================\n";
+
+    if (!distro.name.empty()) {
+        std::cout
+            << "Detected : "
+            << distro.name
             << '\n';
     }
 
-    return result;
+    std::cout
+        << "ID       : "
+        << (
+            distro.id.empty()
+                ? "<unknown>"
+                : distro.id
+        )
+        << '\n';
+
+    std::cout
+        << "ID_LIKE  : "
+        << (
+            distro.idLike.empty()
+                ? "<none>"
+                : distro.idLike
+        )
+        << "\n\n";
+
+    const std::string combined =
+        distro.id + " " + distro.idLike;
+
+    /*
+     * Debian / Ubuntu / Linux Mint
+     */
+    if (
+        contains(combined, "debian") ||
+        distro.id == "ubuntu" ||
+        distro.id == "linuxmint" ||
+        distro.id == "pop"
+    ) {
+        std::cout
+            << "[LibreBuilder] Package manager: APT\n";
+
+        int result = executeCommand(
+            "sudo apt update"
+        );
+
+        if (result != 0) {
+            return result;
+        }
+
+        return executeCommand(
+            "sudo apt install -y "
+            "build-essential "
+            "cmake "
+            "ninja-build "
+            "git "
+            "pkg-config"
+        );
+    }
+
+    /*
+     * Fedora / RHEL / Rocky / Alma
+     */
+    if (
+        contains(combined, "fedora") ||
+        contains(combined, "rhel") ||
+        distro.id == "rocky" ||
+        distro.id == "almalinux"
+    ) {
+        std::cout
+            << "[LibreBuilder] Package manager: DNF\n";
+
+        return executeCommand(
+            "sudo dnf install -y "
+            "gcc "
+            "gcc-c++ "
+            "cmake "
+            "ninja-build "
+            "git "
+            "pkgconf-pkg-config"
+        );
+    }
+
+    /*
+     * Arch / Manjaro / EndeavourOS
+     */
+    if (
+        contains(combined, "arch") ||
+        distro.id == "manjaro" ||
+        distro.id == "endeavouros"
+    ) {
+        std::cout
+            << "[LibreBuilder] Package manager: Pacman\n";
+
+        return executeCommand(
+            "sudo pacman -S --needed "
+            "base-devel "
+            "cmake "
+            "ninja "
+            "git "
+            "pkgconf"
+        );
+    }
+
+    /*
+     * openSUSE
+     */
+    if (
+        contains(combined, "suse") ||
+        distro.id == "opensuse-tumbleweed" ||
+        distro.id == "opensuse-leap"
+    ) {
+        std::cout
+            << "[LibreBuilder] Package manager: Zypper\n";
+
+        return executeCommand(
+            "sudo zypper install "
+            "-y "
+            "gcc "
+            "gcc-c++ "
+            "cmake "
+            "ninja "
+            "git "
+            "pkg-config"
+        );
+    }
+
+    std::cerr
+        << "[LibreBuilder] Unsupported Linux distribution.\n\n";
+
+    std::cerr
+        << "LibreBuilder could not determine the correct package manager.\n";
+
+    std::cerr
+        << "Install these tools manually:\n"
+        << "  C/C++ compiler\n"
+        << "  CMake\n"
+        << "  Ninja\n"
+        << "  Git\n"
+        << "  pkg-config\n";
+
+    return 1;
+
+#endif
 }
 
 static void printConfig(
@@ -259,7 +486,8 @@ static void printConfig(
 
     if (config.dependencies.empty()) {
         std::cout << "<none>\n";
-    } else {
+    }
+    else {
         std::cout << '\n';
 
         for (const auto& dep : config.dependencies) {
@@ -333,18 +561,18 @@ static int defaultBuild() {
     }
 
     int result = executeCommand(
-        "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug"
+        "cmake -S . -B build "
+        "-G Ninja "
+        "-DCMAKE_BUILD_TYPE=Debug"
     );
 
     if (result != 0) {
         return result;
     }
 
-    result = executeCommand(
+    return executeCommand(
         "cmake --build build"
     );
-
-    return result;
 }
 
 static int customBuild(
@@ -362,30 +590,22 @@ static int customBuild(
 }
 
 static int defaultRun() {
-    const std::vector<std::string> possibleExecutables = {
+    const std::vector<std::string> executables = {
         "build/LibreGE",
         "build/bin/LibreGE",
         "bin/LibreGE"
     };
 
-    for (const auto& exe : possibleExecutables) {
+    for (const auto& exe : executables) {
         if (fs::exists(exe)) {
-            return executeCommand("./" + exe);
+            return executeCommand(
+                "./" + exe
+            );
         }
     }
 
     std::cerr
         << "[LibreBuilder] Could not find LibreGE executable.\n";
-
-    std::cerr
-        << "[LibreBuilder] Expected one of:\n";
-
-    for (const auto& exe : possibleExecutables) {
-        std::cerr
-            << "  "
-            << exe
-            << '\n';
-    }
 
     return 1;
 }
@@ -404,6 +624,18 @@ static int customRun(
     return 0;
 }
 
+static void cleanBuild() {
+    if (fs::exists("build")) {
+        std::cout
+            << "[LibreBuilder] Removing build directory...\n";
+
+        fs::remove_all("build");
+    }
+
+    std::cout
+        << "[LibreBuilder] Clean complete.\n";
+}
+
 static void printHelp() {
     std::cout << R"(
 LibreBuilder
@@ -412,17 +644,60 @@ Usage:
   lbbe [command] [file]
 
 Commands:
-  build      Build the project
-  run        Build and run the project
-  parse      Parse and print configuration
-  clean      Delete build directory
-  help       Show this help
+
+  setup
+      Detect Linux distribution and install
+      LibreBuilder build dependencies.
+
+  build
+      Build the LibreGE project.
+
+  run
+      Build and run LibreGE.
+
+  parse
+      Parse LibreBuild.lbbe and display
+      its configuration.
+
+  clean
+      Remove the build directory.
+
+  help
+      Show this message.
+
+
+Supported Linux distributions:
+
+  Debian
+  Ubuntu
+  Linux Mint
+  Pop!_OS
+
+  Fedora
+  RHEL
+  Rocky Linux
+  AlmaLinux
+
+  Arch Linux
+  Manjaro
+  EndeavourOS
+
+  openSUSE Leap
+  openSUSE Tumbleweed
+
 
 Examples:
+
+  lbbe setup
+
   lbbe build
+
   lbbe run
+
+  lbbe clean
+
   lbbe parse
-  lbbe build LibreBuild.lbbe
+
 )";
 }
 
@@ -449,17 +724,12 @@ int main(
         return 0;
     }
 
+    if (command == "setup") {
+        return setupLinuxDependencies();
+    }
+
     if (command == "clean") {
-        if (fs::exists("build")) {
-            std::cout
-                << "[LibreBuilder] Removing build directory...\n";
-
-            fs::remove_all("build");
-        }
-
-        std::cout
-            << "[LibreBuilder] Clean complete.\n";
-
+        cleanBuild();
         return 0;
     }
 
@@ -488,31 +758,42 @@ int main(
         return 0;
     }
 
+    if (
+        command != "build" &&
+        command != "run"
+    ) {
+        std::cerr
+            << "[LibreBuilder] Unknown command: "
+            << command
+            << '\n';
+
+        printHelp();
+
+        return 1;
+    }
+
     int result = runUserProcesses(config);
 
     if (result != 0) {
         return result;
     }
 
-    if (
-        command == "build" ||
-        command == "run"
-    ) {
-        if (config.buildCommands.empty()) {
-            result = defaultBuild();
-        } else {
-            result = customBuild(config);
-        }
+    if (config.buildCommands.empty()) {
+        result = defaultBuild();
+    }
+    else {
+        result = customBuild(config);
+    }
 
-        if (result != 0) {
-            return result;
-        }
+    if (result != 0) {
+        return result;
     }
 
     if (command == "run") {
         if (config.runCommands.empty()) {
             result = defaultRun();
-        } else {
+        }
+        else {
             result = customRun(config);
         }
     }
