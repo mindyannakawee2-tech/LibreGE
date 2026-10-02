@@ -10,26 +10,76 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Don't build SDL's own examples/tests.
-set(SDL_TESTS OFF CACHE BOOL "" FORCE)
-set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
+# ============================================================
+# SDL
+# ============================================================
 
-# Vendored SDL3
-add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
-
-add_executable(LibreGE
-    src/main.cpp
+set(
+    SDL_TESTS
+    OFF
+    CACHE BOOL ""
+    FORCE
 )
 
-target_link_libraries(LibreGE
+set(
+    SDL_EXAMPLES
+    OFF
+    CACHE BOOL ""
+    FORCE
+)
+
+add_subdirectory(
+    vendor/SDL
+    EXCLUDE_FROM_ALL
+)
+
+# ============================================================
+# LibreGE
+# ============================================================
+
+add_executable(
+    LibreGE
+
+    src/main.cpp
+
+    src/graphics/ImageLoader.cpp
+)
+
+target_include_directories(
+    LibreGE
+
     PRIVATE
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb
+)
+
+target_link_libraries(
+    LibreGE
+
+    PRIVATE
+
     SDL3::SDL3
 )
 
-target_compile_features(LibreGE PRIVATE cxx_std_20)
+target_compile_features(
+    LibreGE
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(LibreGE PRIVATE
+    PRIVATE
+
+    cxx_std_20
+)
+
+if(
+    CMAKE_CXX_COMPILER_ID
+    MATCHES
+    "GNU|Clang"
+)
+    target_compile_options(
+        LibreGE
+
+        PRIVATE
+
         -Wall
         -Wextra
         -Wpedantic
