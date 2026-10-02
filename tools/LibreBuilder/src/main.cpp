@@ -695,6 +695,8 @@ Examples:
 
   lbbe setup
 
+  lbbe update
+
   lbbe build
 
   lbbe run
