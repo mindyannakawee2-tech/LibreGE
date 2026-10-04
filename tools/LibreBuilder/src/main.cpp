@@ -552,6 +552,76 @@ static int runUserProcesses(
     return 0;
 }
 
+
+static int copyRuntimeAssets() {
+    const fs::path sourceAssets = "assets";
+    const fs::path buildAssets = "build/assets";
+
+    if (!fs::exists(sourceAssets)) {
+        std::cout
+            << "[LibreBuilder] No assets directory found. Skipping asset copy.\n";
+
+        return 0;
+    }
+
+    std::cout
+        << "[LibreBuilder] Copying assets...\n";
+
+    std::error_code ec;
+
+    if (fs::exists(buildAssets)) {
+        fs::remove_all(
+            buildAssets,
+            ec
+        );
+
+        if (ec) {
+            std::cerr
+                << "[LibreBuilder] Failed to remove old assets: "
+                << ec.message()
+                << '\n';
+
+            return 1;
+        }
+    }
+
+    fs::create_directories(
+        buildAssets,
+        ec
+    );
+
+    if (ec) {
+        std::cerr
+            << "[LibreBuilder] Failed to create build/assets: "
+            << ec.message()
+            << '\n';
+
+        return 1;
+    }
+
+    fs::copy(
+        sourceAssets,
+        buildAssets,
+        fs::copy_options::recursive |
+        fs::copy_options::overwrite_existing,
+        ec
+    );
+
+    if (ec) {
+        std::cerr
+            << "[LibreBuilder] Failed to copy assets: "
+            << ec.message()
+            << '\n';
+
+        return 1;
+    }
+
+    std::cout
+        << "[LibreBuilder] Assets copied to build/assets\n";
+
+    return 0;
+}
+
 static int defaultBuild() {
     std::cout
         << "[LibreBuilder] Using default LibreGE build process.\n";
@@ -570,9 +640,24 @@ static int defaultBuild() {
         return result;
     }
 
-    return executeCommand(
+    result = executeCommand(
         "cmake --build build"
     );
+
+    if (result != 0) {
+        return result;
+    }
+
+    result = copyRuntimeAssets();
+
+    if (result != 0) {
+        return result;
+    }
+
+    std::cout
+        << "[LibreBuilder] Build package ready in build/\n";
+
+    return 0;
 }
 
 static int customBuild(
@@ -589,23 +674,34 @@ static int customBuild(
     return 0;
 }
 
+
 static int defaultRun() {
     const std::vector<std::string> executables = {
-        "build/LibreGE",
-        "build/bin/LibreGE",
+        "LibreGE",
         "bin/LibreGE"
     };
 
     for (const auto& exe : executables) {
-        if (fs::exists(exe)) {
+        const fs::path fullPath =
+            fs::path("build") / exe;
+
+        if (fs::exists(fullPath)) {
+            std::cout
+                << "[LibreBuilder] Running from build directory...\n";
+
             return executeCommand(
-                "./" + exe
+                "cd build && ./" + exe
             );
         }
     }
 
     std::cerr
         << "[LibreBuilder] Could not find LibreGE executable.\n";
+
+    std::cerr
+        << "[LibreBuilder] Expected:\n"
+        << "  build/LibreGE\n"
+        << "  build/bin/LibreGE\n";
 
     return 1;
 }

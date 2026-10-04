@@ -43,6 +43,7 @@ add_executable(
     src/main.cpp
 
     src/graphics/ImageLoader.cpp
+    src/graphics/Window.cpp
 )
 
 target_include_directories(
