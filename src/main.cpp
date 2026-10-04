@@ -1,9 +1,5 @@
+#include "graphics/Texture.hpp"
 #include "graphics/Window.hpp"
-#include "graphics/ImageLoader.hpp"
-
-#include <SDL3/SDL.h>
-
-#include <iostream>
 
 int main() {
     LibreGE::Window window(
@@ -16,17 +12,10 @@ int main() {
         return 1;
     }
 
-    SDL_Texture* image =
-        LibreGE::ImageLoader::LoadTexture(
-            window.GetRenderer(),
-            "assets/test.png"
-        );
-
-    if (!image) {
-        std::cerr
-            << "[LibreGE] Failed to load "
-            << "assets/test.png\n";
-    }
+    LibreGE::Texture image(
+        window,
+        "assets/LibreGE.png"
+    );
 
     while (!window.ShouldClose()) {
         window.PollEvents();
@@ -38,50 +27,40 @@ int main() {
             255
         );
 
-        if (image) {
-            float imageWidth = 0.0f;
-            float imageHeight = 0.0f;
+        if (image.IsValid()) {
+    const float scale = 3.0f;
 
-            SDL_GetTextureSize(
-                image,
-                &imageWidth,
-                &imageHeight
-            );
+    const float width =
+        image.GetWidth() * scale;
 
-            SDL_FRect destination {
-                (
-                    static_cast<float>(
-                        window.GetWidth()
-                    ) -
-                    imageWidth
-                ) / 2.0f,
+    const float height =
+        image.GetHeight() * scale;
 
-                (
-                    static_cast<float>(
-                        window.GetHeight()
-                    ) -
-                    imageHeight
-                ) / 2.0f,
+    const float x =
+        (
+            static_cast<float>(
+                window.GetWidth()
+            ) -
+            width
+        ) / 2.0f;
 
-                imageWidth,
-                imageHeight
-            };
+    const float y =
+        (
+            static_cast<float>(
+                window.GetHeight()
+            ) -
+            height
+        ) / 2.0f;
 
-            SDL_RenderTexture(
-                window.GetRenderer(),
-                image,
-                nullptr,
-                &destination
-            );
-        }
+    image.Draw(
+        x,
+        y,
+        width,
+        height
+    );
+}
 
         window.Present();
-    }
-
-    if (image) {
-        SDL_DestroyTexture(
-            image
-        );
     }
 
     return 0;
