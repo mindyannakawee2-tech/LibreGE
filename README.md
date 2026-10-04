@@ -6,7 +6,7 @@ LibreGE is an continuation of NijeEngine, cuz I deleted Windows
 # Use LibreGE
 ```
 git clone --recurse-submodules https://github.com/mindyannakawee2-tech/LibreGE.git PROJECT_NAME
-cd LibreGE
+cd PROJECT_NAME
 
 ./install-lbbe.sh
 
