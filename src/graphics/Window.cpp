@@ -1,4 +1,5 @@
 #include "Window.hpp"
+#include "../input/Input.hpp"
 
 #include <iostream>
 
@@ -115,6 +116,8 @@ void Window::PollEvents() {
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
+        Input::ProcessEvent(event);
+
         if (
             event.type ==
             SDL_EVENT_QUIT

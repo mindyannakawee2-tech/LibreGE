@@ -45,6 +45,7 @@ add_executable(
     src/graphics/ImageLoader.cpp
     src/graphics/Window.cpp
     src/graphics/Texture.cpp
+    src/input/Input.cpp
 )
 
 target_include_directories(

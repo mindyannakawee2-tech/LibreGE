@@ -1,5 +1,8 @@
 #include "graphics/Texture.hpp"
 #include "graphics/Window.hpp"
+#include "input/Input.hpp"
+
+#include <SDL3/SDL.h>
 
 int main() {
     LibreGE::Window window(
@@ -17,8 +20,70 @@ int main() {
         "assets/LibreGE.png"
     );
 
+    float x = 100.0f;
+    float y = 100.0f;
+
+    const float speed = 0.02f;
+    const float scale = 3.0f;
+
     while (!window.ShouldClose()) {
+        LibreGE::Input::BeginFrame();
+
         window.PollEvents();
+
+        if (
+            LibreGE::Input::IsKeyDown(
+                SDLK_W
+            )
+        ) {
+            y -= speed;
+        }
+
+        if (
+            LibreGE::Input::IsKeyDown(
+                SDLK_S
+            )
+        ) {
+            y += speed;
+        }
+
+        if (
+            LibreGE::Input::IsKeyDown(
+                SDLK_A
+            )
+        ) {
+            x -= speed;
+        }
+
+        if (
+            LibreGE::Input::IsKeyDown(
+                SDLK_D
+            )
+        ) {
+            x += speed;
+        }
+
+        if (
+            LibreGE::Input::IsKeyPressed(
+                SDLK_SPACE
+            )
+        ) {
+            SDL_Log(
+                "SPACE pressed!"
+            );
+        }
+
+        if (
+            LibreGE::Input::IsMousePressed(
+                SDL_BUTTON_LEFT
+            )
+        ) {
+            SDL_Log(
+                "Mouse click at %.1f, %.1f",
+                LibreGE::Input::GetMouseX(),
+                LibreGE::Input::GetMouseY()
+            );
+        }
 
         window.Clear(
             25,
@@ -28,37 +93,13 @@ int main() {
         );
 
         if (image.IsValid()) {
-    const float scale = 3.0f;
-
-    const float width =
-        image.GetWidth() * scale;
-
-    const float height =
-        image.GetHeight() * scale;
-
-    const float x =
-        (
-            static_cast<float>(
-                window.GetWidth()
-            ) -
-            width
-        ) / 2.0f;
-
-    const float y =
-        (
-            static_cast<float>(
-                window.GetHeight()
-            ) -
-            height
-        ) / 2.0f;
-
-    image.Draw(
-        x,
-        y,
-        width,
-        height
-    );
-}
+            image.Draw(
+                x,
+                y,
+                image.GetWidth() * scale,
+                image.GetHeight() * scale
+            );
+        }
 
         window.Present();
     }
