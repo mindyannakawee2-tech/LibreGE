@@ -48,6 +48,8 @@ add_executable(
     src/graphics/Camera.cpp
     src/input/Input.cpp
     src/core/Time.cpp
+    src/core/LayerManager.cpp
+    src/core/Layer.cpp
     src/client/Client.cpp
     src/network/NetworkClient.cpp
 )
