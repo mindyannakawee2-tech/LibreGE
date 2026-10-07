@@ -7,6 +7,7 @@
 namespace LibreGE {
 
 class Window;
+class Camera;
 
 class Texture {
 public:
@@ -36,6 +37,21 @@ public:
         float width,
         float height
     );
+
+    void Draw(
+        const Camera& camera,
+        float x,
+        float y
+    );
+
+    void Draw(
+        const Camera& camera,
+        float x,
+        float y,
+        float width,
+        float height
+    );
+
 
     void DrawCentered();
 

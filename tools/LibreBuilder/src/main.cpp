@@ -655,6 +655,22 @@ static int defaultBuild() {
     }
 
     std::cout
+        << "[LibreBuilder] Building Java runtime...\\n";
+
+    result = executeCommand(
+        "./scripts/build-java-runtime.sh"
+    );
+
+    if (result != 0) {
+        return result;
+    }
+
+    std::cout
+        << "[LibreBuilder] Build package ready in build/\\n";
+
+    return 0;
+
+    std::cout
         << "[LibreBuilder] Build package ready in build/\n";
 
     return 0;

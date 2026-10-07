@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+LibreGE-Plugin-Class: librege.sample.SamplePlugin
+LibreGE-Plugin-API: 1
+

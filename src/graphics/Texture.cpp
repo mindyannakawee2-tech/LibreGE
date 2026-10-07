@@ -1,4 +1,5 @@
 #include "Texture.hpp"
+#include "Camera.hpp"
 
 #include "ImageLoader.hpp"
 #include "Window.hpp"
@@ -149,6 +150,60 @@ void Texture::Draw(
         m_Texture,
         nullptr,
         &destination
+    );
+}
+
+
+void Texture::Draw(
+    const Camera& camera,
+    float x,
+    float y
+) {
+    Draw(
+        camera,
+        x,
+        y,
+        m_Width,
+        m_Height
+    );
+}
+
+void Texture::Draw(
+    const Camera& camera,
+    float x,
+    float y,
+    float width,
+    float height
+) {
+    if (!IsValid()) {
+        return;
+    }
+
+    const float screenX =
+        camera.WorldToScreenX(
+            x
+        );
+
+    const float screenY =
+        camera.WorldToScreenY(
+            y
+        );
+
+    const float screenWidth =
+        camera.Scale(
+            width
+        );
+
+    const float screenHeight =
+        camera.Scale(
+            height
+        );
+
+    Draw(
+        screenX,
+        screenY,
+        screenWidth,
+        screenHeight
     );
 }
 

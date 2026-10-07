@@ -25,3 +25,4 @@ Thumbs.db
 *.exe
 tools/Image/build/
 .librege/backups/
+build/java/

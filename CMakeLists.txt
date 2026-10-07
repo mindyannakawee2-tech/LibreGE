@@ -45,7 +45,11 @@ add_executable(
     src/graphics/ImageLoader.cpp
     src/graphics/Window.cpp
     src/graphics/Texture.cpp
+    src/graphics/Camera.cpp
     src/input/Input.cpp
+    src/core/Time.cpp
+    src/client/Client.cpp
+    src/network/NetworkClient.cpp
 )
 
 target_include_directories(
@@ -88,3 +92,13 @@ if(
         -Wpedantic
     )
 endif()
+
+
+if(WIN32)
+    target_link_libraries(
+        LibreGE
+        PRIVATE
+        ws2_32
+    )
+endif()
+
